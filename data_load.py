@@ -39,7 +39,7 @@ def load_data(mode="train"):
     char2idx, idx2char = load_vocab()
 
     if mode=="train":
-        if "LJ" in hp.data:
+        if True:
             # Parse
             fpaths, text_lengths, texts = [], [], []
             transcript = os.path.join(hp.data, 'transcript.csv')
@@ -47,7 +47,7 @@ def load_data(mode="train"):
             for line in lines:
                 fname, _, text = line.strip().split("|")
 
-                fpath = os.path.join(hp.data, "wavs", fname + ".wav")
+                fpath = os.path.join(hp.data, "wavs", fname)
                 fpaths.append(fpath)
 
                 text = text_normalize(text) + "E"  # E: EOS
@@ -85,6 +85,15 @@ def load_data(mode="train"):
             texts[i, :len(sent)] = [char2idx[char] for char in sent]
         return texts
 
+def load_text(text):
+    char2idx, idx2char = load_vocab()
+    lines = text
+    sents = [text_normalize(line).strip() + "E" for line in lines] # text normalization, E: EOS
+    texts = np.zeros((len(sents), hp.max_N), np.int32)
+    for i, sent in enumerate(sents):
+        texts[i, :len(sent)] = [char2idx[char] for char in sent]
+    return texts
+
 def get_batch():
     """Loads training data and put them in queues"""
     with tf.device('/cpu:0'):
@@ -104,8 +113,8 @@ def get_batch():
         if hp.prepro:
             def _load_spectrograms(fpath):
                 fname = os.path.basename(fpath)
-                mel = "mels/{}".format(fname.replace("wav", "npy"))
-                mag = "mags/{}".format(fname.replace("wav", "npy"))
+                mel = "mels/{}".format(str(fname)[2:-1].replace("wav", "npy"))
+                mag = "mags/{}".format(str(fname)[2:-1].replace("wav", "npy"))
                 return fname, np.load(mel), np.load(mag)
 
             fname, mel, mag = tf.py_func(_load_spectrograms, [fpath], [tf.string, tf.float32, tf.float32])
